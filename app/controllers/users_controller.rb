@@ -12,14 +12,14 @@ class UsersController < ApplicationController
     # Saving without session maintenance to skip
     # auto-login which can't happen here because
     # the User has not yet been activated
-    if @user.save
-      flash[:notice] = "Your account has been created."
-      redirect_to signup_url
+    if @user.save_without_session_maintenance
+      @user.send_activation_instructions!      # new method in the User model
+      flash[:notice] = "Your account has been created. Please check your e-mail for your account activation instructions!"
+      redirect_to root_url
     else
-      flash[:notice] = "There was a problem creating you."
+      flash[:notice] = "There was a problem creating the user"
       render :action => :new
     end
-    
   end
 
   def show
@@ -37,6 +37,21 @@ class UsersController < ApplicationController
       redirect_to account_url
     else
       render :action => :edit
+    end
+  end
+  
+  
+  def activate
+    @user = User.find_using_perishable_token(params[:activation_code], 1.week) || (raise Exception)
+    
+    raise Exception if @user.active?
+    
+    if @user.activate!
+      UserSession.create(@user, false)
+      @user.send_activation_confirmation!
+      redirect_to account_url
+    else
+      render :action => :new
     end
   end
 end

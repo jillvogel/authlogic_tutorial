@@ -11,4 +11,9 @@ UserActivation::Application.routes.draw do
   match 'signup' => 'users#new', :as => :signup
 
   root :to => 'users#new'
+
+  # account activation
+  match 'activate(/:activation_code)' => 'users#activate', :as => :activate_account
+  match 'send_activation(/:user_id)' => 'users#send_activation', :as => :send_activation
+  
 end
